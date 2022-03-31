@@ -33,7 +33,7 @@ namespace ProcesarPIP
             BatchSize = 50000;
         }
 
-        //Paso 1.- Obtener el listado de Ejecutoras
+        //Paso 1.- Obtener el listado de proyectos
         public async Task<List<WebServiceEjecutar>> ObtenerListadoInvocaciones()
         {
             using var conexionSql = new SqlConnection(Conexion);
