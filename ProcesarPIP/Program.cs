@@ -25,6 +25,7 @@ namespace ProcesarPIP
             var claveSmtp = "";
             var deSmtp = "";
             var paraSmtp = "";
+            var servicioWeb = "";
             try
             {
                 conexionBd = string.IsNullOrEmpty(args[0]) ? "" : args[0];
@@ -35,6 +36,7 @@ namespace ProcesarPIP
                 claveSmtp = string.IsNullOrEmpty(args[5]) ? "" : args[5];
                 deSmtp = string.IsNullOrEmpty(args[6]) ? "" : args[6];
                 paraSmtp = string.IsNullOrEmpty(args[7]) ? "" : args[7];
+                servicioWeb = string.IsNullOrEmpty(args[8]) ? "" : args[8];
             }
             catch (Exception)
             {
@@ -61,7 +63,7 @@ namespace ProcesarPIP
                 !string.IsNullOrEmpty(conexionBd) ? conexionBd : Configuration.GetConnectionString("ConexionPcm"),
                 int.Parse(!string.IsNullOrEmpty(numeroReintentos) ? numeroReintentos : Configuration.GetSection("NumeroReintentosMaximo").Value.ToString()),
                 mailConfiguration,
-                Configuration.GetSection("ServicioBancoInversiones").Value.ToString())
+                !string.IsNullOrEmpty(servicioWeb) ? servicioWeb : Configuration.GetSection("ServicioBancoInversiones").Value.ToString())
                 .GetAwaiter()
                 .GetResult();
         }

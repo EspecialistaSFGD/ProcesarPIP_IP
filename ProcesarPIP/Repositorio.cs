@@ -140,7 +140,7 @@ namespace ProcesarPIP
                 var parameters = new DynamicParameters();
                 parameters.Add("@IdProyecto", proyecto.IdProyecto, DbType.String, ParameterDirection.Input, 10);
 
-                var respuesta = await conexionSql.QueryAsync("dbo.03C_EliminarPipLocalizacion", commandType: CommandType.StoredProcedure, commandTimeout: 1200);
+                var respuesta = await conexionSql.QueryAsync("dbo.03C_EliminarPipLocalizacion",parameters, commandType: CommandType.StoredProcedure, commandTimeout: 1200);
                 return true;
             }
             catch (Exception exception)
