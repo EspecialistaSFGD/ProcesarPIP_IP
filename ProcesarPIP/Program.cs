@@ -70,18 +70,16 @@ namespace ProcesarPIP
 
         static async Task EjecutarProceso(string conexion, int numeroReintentosMaximo, Mail mail, string servicioBancoInversiones)
         {
+            var repositorio = new Repositorio(conexion);
+            var mensajeRespuesta = @"<h3>Proceso de carga de Proyectos de Inversion</h3><p>mensaje_respuesta</p>";
             try
             {
                 Console.WriteLine($"-----------------------------------------------------------------------------");
                 Console.WriteLine($"    Proceso de carga de Proyectos de Inversion para el anio configurado");
                 Console.WriteLine($"-----------------------------------------------------------------------------");
-                var mensajeRespuesta = @"<h3>Proceso de carga de Proyectos de Inversion</h3><p>mensaje_respuesta</p>";
-                var proxyManager = ProxyManager.GetNewProxyManager();
-                var typeConvertionsManager = TypeConvertionManager.GetNewTypeConvertionManager();
-                var fileManager = FileManager.GetNewFileManager();
-                var request = new ProxyManager.Request();
-                var repositorio = new Repositorio(conexion);
 
+                var typeConvertionsManager = TypeConvertionManager.GetNewTypeConvertionManager();
+  
                 var listaWebService = await repositorio.ObtenerListadoInvocaciones();
                 var listaErrados = new List<string>();
                 Console.WriteLine($"Numero de invocaciones que tendra el servicio : {listaWebService.Count}");
@@ -167,6 +165,10 @@ namespace ProcesarPIP
             }
             catch (Exception exception)
             {
+                var detalle = $"<p>Ocurrió un problema durante el proceso de carga masiva de datos de proyectos. Detalle del error : {exception.Message}</p>";
+                mensajeRespuesta = mensajeRespuesta.Replace("mensaje_respuesta", detalle);
+                repositorio.SendMail(mail, "Proceso de Carga Masiva de Datos de Proyectos", mensajeRespuesta);
+
                 Console.WriteLine(exception.Message);
                 throw;
             }
