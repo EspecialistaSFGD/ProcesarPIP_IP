@@ -128,24 +128,36 @@ namespace ProcesarPIP
                         continue;
                     }
 
-                    pipLocalizacionTable.Add(PipLocalizacion.PipLocalizacionMap(pip, int.Parse(invocacion.Anio)));
-
-                    var pipLocalizacionDataTable = typeConvertionsManager.ArrayListToDataTable(new ArrayList(pipLocalizacionTable));
-                    var haSidoRegistradoPipLocalizacion = repositorio.RegistrarPipLocalizacion(pipLocalizacionDataTable);
-
-                    if (!haSidoRegistradoPipLocalizacion)
+                    var pipLocalizacion = PipLocalizacion.PipLocalizacionMap(pip, int.Parse(invocacion.Anio));
+                    if(pipLocalizacion == null)
                     {
-                        listaErrados.Add($"<tr><td>{invocacion.IdProyecto}</td><td>No se han podido registrar la localizacion del proyecto</td></tr>");
-                        continue;
+                        listaErrados.Add($"<tr><td>{invocacion.IdProyecto}</td><td>El proyecto fue registrado, pero la localización del mismo debe ser regularizado (no existe).</td></tr>");
+
+                        Console.WriteLine($"Proyecto {invocacion.IdProyecto} registrado para el anio {invocacion.Anio} con observaciones: El proyecto no tiene localización definida.");
                     }
-                    Console.WriteLine($"Proyecto {invocacion.IdProyecto} registrado correctamente para el anio {invocacion.Anio}");
+                    else
+                    {
+                        pipLocalizacionTable.Add(pipLocalizacion);
+
+                        var pipLocalizacionDataTable = typeConvertionsManager.ArrayListToDataTable(new ArrayList(pipLocalizacionTable));
+                        var haSidoRegistradoPipLocalizacion = repositorio.RegistrarPipLocalizacion(pipLocalizacionDataTable);
+
+                        if (!haSidoRegistradoPipLocalizacion)
+                        {
+                            listaErrados.Add($"<tr><td>{invocacion.IdProyecto}</td><td>No se han podido registrar la localizacion del proyecto</td></tr>");
+                            continue;
+                        }
+
+                        Console.WriteLine($"Proyecto {invocacion.IdProyecto} registrado correctamente para el anio {invocacion.Anio}");
+                    }
+
                     var haSidoActualizado = await repositorio.ActualizarPip(invocacion);
+
                     if (!haSidoActualizado)
                     {
                         listaErrados.Add($"<tr><td>{invocacion.IdProyecto}</td><td>No se ha podido actualizar el estado del proyecto, se debe volver a procesar</td></tr>");
                         continue;
                     }
-
                 }
 
                 var detalle = listaErrados.Count == 0 ?
