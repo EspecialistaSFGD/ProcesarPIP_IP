@@ -71,7 +71,7 @@ namespace ProcesarPIP
         static async Task EjecutarProceso(string conexion, int numeroReintentosMaximo, Mail mail, string servicioBancoInversiones)
         {
             var repositorio = new Repositorio(conexion);
-            var mensajeRespuesta = @"<h3>Proceso de carga de Proyectos de Inversion</h3><p>mensaje_respuesta</p>";
+            var mensajeRespuesta = @"<h2>Proceso de carga de Proyectos de Inversion</h2><p>mensaje_respuesta</p>";
             try
             {
                 Console.WriteLine($"-----------------------------------------------------------------------------");
@@ -169,7 +169,7 @@ namespace ProcesarPIP
                 var listadoDetalle = $"<table><thead><tr><th>Proyecto</th><th>Mensaje de Error</th></tr></thead><tbody>{string.Join(' ', listaErrados)}</tbody></table>";
 
                 mensajeRespuesta = mensajeRespuesta.Replace("mensaje_respuesta", detalle);
-                mensajeRespuesta += listadoDetalle;
+                mensajeRespuesta += listaErrados.Count == 0 ? "" :listadoDetalle;
 
                 repositorio.SendMail(mail, "Proceso de Carga Masiva de Datos de Proyectos", mensajeRespuesta);
 
@@ -177,7 +177,7 @@ namespace ProcesarPIP
             }
             catch (Exception exception)
             {
-                var detalle = $"<p>Ocurrió un problema durante el proceso de carga masiva de datos de proyectos. Detalle del error : {exception.Message}</p>";
+                var detalle = $"Ocurrió un problema durante el proceso de carga masiva de datos de proyectos. Detalle del error : {exception.Message}";
                 mensajeRespuesta = mensajeRespuesta.Replace("mensaje_respuesta", detalle);
                 repositorio.SendMail(mail, "Proceso de Carga Masiva de Datos de Proyectos", mensajeRespuesta);
 
