@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
+using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,6 +23,7 @@ namespace ProcesarPIP
         private readonly TypeConvertionManager typeConvertionsManager;
         private readonly int TiempoEsperaCargadoMasivo;
         private readonly int BatchSize;
+        private readonly string SOAP_ACTION;
 
         public Repositorio(string conexion)
         {
@@ -31,6 +32,7 @@ namespace ProcesarPIP
             typeConvertionsManager = TypeConvertionManager.GetNewTypeConvertionManager();
             TiempoEsperaCargadoMasivo = 1000;
             BatchSize = 50000;
+            SOAP_ACTION = "SOAPAction";
         }
 
         //Paso 1.- Obtener el listado de proyectos
@@ -62,13 +64,10 @@ namespace ProcesarPIP
             {
                 var numeroReintento = 0;
                 var request = new ProxyManager.Request();
+                var respuestaOk = false;
+                var body = "";
                 Console.WriteLine($"Cuerpo de la consulta (proyecto) : { invocacion.UrlWebService }.");
-                request.HttpMethod = ProxyManager.HttpMethod.Post;
-                request.Uri = urlServicio;
-                request.Body = invocacion.UrlWebService;
-                request.MediaType = ProxyManager.MediaType.Xml;
-                var respuesta = new ProxyManager.Response { Ok = false };
-                while (!respuesta.Ok && (numeroReintento <= numeroReintentosMaximo))
+                while (!respuestaOk && (numeroReintento <= numeroReintentosMaximo))
                 {
                     if (numeroReintento > 0)
                     {
@@ -76,20 +75,44 @@ namespace ProcesarPIP
                     }
                     try
                     {
-                        respuesta = await proxyManager.CallServiceAsync(request);
+                        var datosRequest = invocacion.UrlWebService.Split('|');
+                        var cabeceras = new Dictionary<string, string>();
+                        cabeceras.Add(SOAP_ACTION, datosRequest[1]);
+
+                        var clientHandler = new HttpClientHandler();
+                        using (var client = new HttpClient(clientHandler))
+                        {
+                            foreach (var item in cabeceras)
+                            {
+                                client.DefaultRequestHeaders.Add(item.Key, item.Value);
+                            }
+
+                            var response = await client.PostAsync(urlServicio, new StringContent(datosRequest[0], Encoding.UTF8, "text/xml"));
+
+                            if (response.IsSuccessStatusCode)
+                            {
+                                body = await response.Content.ReadAsStringAsync();
+                                respuestaOk = true;
+                            }
+                            else
+                            {
+                                throw new Exception($"Error en respuesta =>  {await response.Content.ReadAsStringAsync()}");
+                            }
+                        }
                     }
                     catch (Exception exception)
                     {
                         Console.WriteLine($"Error al intentar comunicarse con el servicio del MEF. Detalle del error => {exception.Message}");
                         Thread.Sleep(1000);
-                        respuesta.Ok = false;
+                        body = "";
+                        respuestaOk = false;
                     }
                     numeroReintento++;
                 }
 
-                if (respuesta.Ok)
+                if (respuestaOk)
                 {
-                    proyecto = typeConvertionsManager.XmlStringToObject<ProyectoPip>(respuesta.ResponseBody, "soap:Envelope.soap:Body.GetPipResponse.GetPipResult.PIP");
+                    proyecto = typeConvertionsManager.XmlStringToObject<ProyectoPip>(body, "soap:Envelope.soap:Body.GetPipResponse.GetPipResult.PIP");
                 }
 
                 if (proyecto != null)
